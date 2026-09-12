@@ -190,19 +190,21 @@ class BudgetService:
                     )
                 for row_number, row in enumerate(reader, start=2):
                     try:
-                        amount = int(row["amount"])
+                        amount = int(row.get("amount") or "")
                         tags = tuple(
-                            tag.strip() for tag in row.get("tags", "").split(",") if tag.strip()
+                            tag.strip()
+                            for tag in (row.get("tags") or "").split(",")
+                            if tag.strip()
                         )
                         self.add_transaction(
-                            transaction_date=row["date"],
-                            transaction_type=row["type"],
-                            category=row["category"],
+                            transaction_date=row.get("date") or "",
+                            transaction_type=row.get("type") or "",
+                            category=row.get("category") or "",
                             amount=amount,
-                            memo=row.get("memo", ""),
+                            memo=row.get("memo") or "",
                             tags=tags,
                         )
-                    except (ValidationError, ValueError) as exc:
+                    except (ValidationError, TypeError, ValueError) as exc:
                         raise ValidationError(f"CSV {row_number}행 오류: {exc}") from exc
                     count += 1
         except OSError as exc:
@@ -245,4 +247,3 @@ class BudgetService:
         except OSError as exc:
             raise AppError(f"CSV 파일을 쓸 수 없습니다: {destination}") from exc
         return len(items)
-

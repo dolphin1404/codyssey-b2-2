@@ -7,7 +7,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
-from .models import AppError, Transaction
+from .models import AppError, Transaction, validate_amount
 
 
 DEFAULT_CATEGORIES = ("food", "transport", "rent", "salary", "etc")
@@ -137,7 +137,12 @@ class BudgetStore:
         result: int | None = None
         for record in self.store.iter_records():
             if record.get("month") == month:
-                result = int(record["amount"])
+                try:
+                    result = validate_amount(int(record["amount"]))
+                except (KeyError, TypeError, ValueError) as exc:
+                    raise AppError(
+                        f"저장된 예산 데이터 형식이 올바르지 않습니다: {self.store.path}"
+                    ) from exc
         return result
 
     def set(self, month: str, amount: int) -> None:
@@ -146,4 +151,3 @@ class BudgetStore:
         ]
         records.append({"month": month, "amount": amount})
         self.store.rewrite(iter(records))
-

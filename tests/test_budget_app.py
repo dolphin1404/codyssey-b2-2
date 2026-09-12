@@ -77,7 +77,16 @@ class BudgetServiceTest(unittest.TestCase):
                 next(csv.reader(file)),
             )
 
+    def test_import_reports_incomplete_csv_row(self) -> None:
+        source = self.data_dir / "invalid.csv"
+        source.write_text(
+            "date,type,category,amount,memo,tags\n"
+            "2024-01-01,expense,food,,점심,meal\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ValidationError, "CSV 2행 오류"):
+            self.service.import_csv(source)
+
 
 if __name__ == "__main__":
     unittest.main()
-
